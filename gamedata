@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Newspeak Translator - 1984</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts: Montserrat (header substitute), Special Elite (typewriter), IBM Plex Mono (mono) -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Special+Elite&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{ --bg:#0f1720; --surface:#1f2937; --text:#f3f4f6; --primary:#b91c1c; --primary-2:#991b1b; }
+    html,body{height:100%}
+    body{box-sizing:border-box;margin:0;font-family: 'Montserrat', sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+    .font-typewriter{font-family:'Special Elite', cursive;}
+    .font-mono-custom{font-family:'IBM Plex Mono', monospace;}
+
+    /* Visual effects & animations (from original) */
+    @keyframes glitch {0%,100%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(-2px,-2px)}60%{transform:translate(2px,2px)}80%{transform:translate(2px,-2px)}}
+    @keyframes scanline {0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+    .scanline::after{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(transparent,rgba(255,255,255,0.08),transparent);animation:scanline 8s linear infinite;pointer-events:none}
+    .card-flip{transition:transform .6s,box-shadow .3s;transform-style:preserve-3d}
+    .card-flip.flipped{transform:rotateY(180deg)}
+    .card-front,.card-back{backface-visibility:hidden}
+    .card-back{transform:rotateY(180deg)}
+    .matched{animation:glitch .3s ease-in-out}
+    .progress-fill{transition:width .5s ease-out}
+    .typing-cursor::after{content:'|';animation:blink 1s infinite}
+    @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+    .shake{animation:shake .5s ease-in-out}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .hidden{display:none}
+    /* small helpers for password UI */
+    .shake-input{animation:shake .4s}
+  </style>
+</head>
+
+<body class="h-full bg-gray-900 text-gray-100">
+
+<!-- =================== CREATOR ACCESS (TpT paid code) =================== -->
+<div id="creator-gate" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900">
+  <div class="bg-gray-800 border-2 border-red-700 rounded-lg p-8 max-w-md w-full text-center">
+    <div class="text-xs uppercase tracking-widest text-red-400 mb-2">Ministry of Truth — Teacher Access</div>
+    <h2 class="font-typewriter text-2xl text-red-500 mb-4">Teacher Access Required</h2>
+    <p class="text-gray-400 text-sm mb-4">Enter the access code included with your purchase (teachers only).</p>
+    <input id="creator-password" type="password" placeholder="Enter purchase access code"
+           class="w-full px-4 py-2 mb-4 rounded bg-gray-900 border border-gray-600 text-gray-100 focus:outline-none" />
+    <button id="creator-submit" class="w-full py-2 rounded bg-red-900 hover:bg-red-800 text-red-200 font-typewriter">VERIFY</button>
+    <p id="creator-error" class="text-red-400 text-sm mt-3 hidden">Incorrect code.</p>
+  </div>
+</div>
+
+<!-- =================== TEACHER SETUP (create class code) =================== -->
+<div id="teacher-setup" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-gray-900">
+  <div class="bg-gray-800 border-2 border-red-700 rounded-lg p-8 max-w-md w-full text-center">
+    <div class="text-xs uppercase tracking-widest text-red-400 mb-2">Teacher Setup</div>
+    <h2 class="font-typewriter text-2xl text-red-500 mb-4">Create Class Code</h2>
+    <p class="text-gray-400 text-sm mb-4">Choose a short code students will use to access the activity (e.g., period2-1984).</p>
+    <input id="class-code-input" type="text" placeholder="Enter class code"
+           class="w-full px-4 py-2 mb-4 rounded bg-gray-900 border border-gray-600 text-gray-100 focus:outline-none"/>
+    <div class="flex gap-3">
+      <button id="save-class-code" class="flex-1 py-2 rounded bg-red-900 hover:bg-red-800 text-red-200 font-typewriter">Save & Open Activity</button>
+      <button id="cancel-class-setup" class="flex-1 py-2 rounded bg-gray-700 hover:bg-gray-600 text-gray-200">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- =================== STUDENT GATE (students enter class code) =================== -->
+<div id="student-gate" class="fixed inset-0 z-30 hidden flex items-center justify-center bg-gray-900">
+  <div class="bg-gray-800 border-2 border-red-700 rounded-lg p-8 max-w-md w-full text-center">
+    <div class="text-xs uppercase tracking-widest text-red-400 mb-2">Student Access</div>
+    <h2 class="font-typewriter text-2xl text-red-500 mb-4">Enter Class Code</h2>
+    <p class="text-gray-400 text-sm mb-4">Enter the code your teacher provided to access the activity.</p>
+    <input id="student-code" type="text" placeholder="Class code"
+           class="w-full px-4 py-2 mb-4 rounded bg-gray-900 border border-gray-600 text-gray-100 focus:outline-none" />
+    <button id="student-submit" class="w-full py-2 rounded bg-red-900 hover:bg-red-800 text-red-200 font-typewriter">ENTER</button>
+    <p id="student-error" class="text-red-400 text-sm mt-3 hidden">Incorrect class code.</p>
+  </div>
+</div>
+
+<!-- =================== MAIN APP (hidden until unlocked) =================== -->
+<div id="app" class="min-h-full w-full relative scanline hidden">
+  <!-- Noise overlay -->
+  <div class="fixed inset-0 opacity-5 pointer-events-none"
+       style="background-image: url('data:image/svg+xml,%3Csvg viewBox=&quot;0 0 200 200&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cfilter id=&quot;noise&quot;%3E%3CfeTurbulence type=&quot;fractalNoise&quot; baseFrequency=&quot;0.9&quot; numOctaves=&quot;4&quot; stitchTiles=&quot;stitch&quot;/%3E%3C/filter%3E%3Crect width=&quot;100%25&quot; height=&quot;100%25&quot; filter=&quot;url(%23noise)&quot;/%3E%3C/svg%3E');"></div>
+
+  <div class="relative z-10 max-w-5xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="text-center mb-8">
+      <div class="inline-block px-4 py-1 bg-red-900 text-red-200 text-xs uppercase tracking-widest mb-4">Ministry of Truth</div>
+      <h1 id="main-title" class="font-typewriter text-4xl md:text-5xl text-red-500 mb-2 tracking-wide">NEWSPEAK TRANSLATOR</h1>
+      <p id="main-instruction" class="text-gray-400 text-sm max-w-xl mx-auto">Learn to decode the language of Oceania. Progress through each level to master Newspeak translation.</p>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="mb-8">
+      <div class="flex justify-between text-xs text-gray-500 mb-2"><span>Level <span id="current-level">1</span> of 3</span> <span id="score-display">Score: 0</span></div>
+      <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div id="progress-bar" class="progress-fill h-full bg-gradient-to-r from-red-700 to-red-500 w-0"></div>
+      </div>
+    </div>
+
+    <!-- Level Indicators -->
+    <div class="flex justify-center gap-4 mb-8">
+      <button id="level-1-btn" class="level-btn px-4 py-2 bg-red-900 text-red-200 rounded text-sm transition-all hover:bg-red-800 border-2 border-red-700"> Level 1: Match </button>
+      <button id="level-2-btn" class="level-btn px-4 py-2 bg-gray-800 text-gray-500 rounded text-sm transition-all border-2 border-gray-700 cursor-not-allowed" disabled> Level 2: Translate </button>
+      <button id="level-3-btn" class="level-btn px-4 py-2 bg-gray-800 text-gray-500 rounded text-sm transition-all border-2 border-gray-700 cursor-not-allowed" disabled> Level 3: Decode </button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="min-h-96">
+      <!-- Level 1 -->
+      <div id="level-1" class="level-content">
+        <div class="text-center mb-6">
+          <h2 class="font-typewriter text-xl text-gray-300 mb-2">LEVEL 1: CARD MATCH</h2>
+          <p class="text-gray-500 text-sm">Match each Newspeak term to its Standard English meaning</p>
+        </div>
+        <div id="matching-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        <div id="match-feedback" class="text-center mt-6 h-8 text-lg font-typewriter"></div>
+      </div>
+
+      <!-- Level 2 -->
+      <div id="level-2" class="level-content hidden">
+        <div class="text-center mb-6">
+          <h2 class="font-typewriter text-xl text-gray-300 mb-2">LEVEL 2: PHRASE TRANSLATION</h2>
+          <p class="text-gray-500 text-sm">Translate these Newspeak phrases into Standard English</p>
+        </div>
+        <div id="translation-container" class="space-y-6"></div>
+      </div>
+
+      <!-- Level 3 -->
+      <div id="level-3" class="level-content hidden">
+        <div class="text-center mb-6">
+          <h2 class="font-typewriter text-xl text-gray-300 mb-2">LEVEL 3: FULL DECODE</h2>
+          <p class="text-gray-500 text-sm">Decode these complex Newspeak passages into Standard English</p>
+        </div>
+        <div id="decode-container" class="space-y-8"></div>
+      </div>
+    </div>
+
+    <!-- Completion Message -->
+    <div id="completion-screen" class="hidden text-center py-12">
+      <div class="inline-block p-8 bg-gray-800 rounded-lg border-2 border-red-700">
+        <div class="text-6xl mb-4">🏆</div>
+        <h2 class="font-typewriter text-3xl text-red-500 mb-4">DOUBLEPLUSGOOD!</h2>
+        <p class="text-gray-300 mb-2">You have mastered Newspeak translation.</p>
+        <p class="text-gray-400 text-sm mb-6">Final Score: <span id="final-score">0</span></p>
+        <button id="restart-btn" class="px-6 py-3 bg-red-900 hover:bg-red-800 text-red-200 rounded transition-all font-typewriter"> RESTART ACTIVITY </button>
+      </div>
+    </div>
+
+    <!-- Reference Panel -->
+    <div class="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
+      <button id="toggle-reference" class="w-full flex justify-between items-center text-left">
+        <span class="font-typewriter text-gray-400">📖 NEWSPEAK DICTIONARY</span>
+        <span id="reference-arrow" class="text-gray-500 transition-transform">▼</span>
+      </button>
+      <div id="reference-content" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">doubleplusgood</span> = excellent, best</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">ungood</span> = bad</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">thoughtcrime</span> = independent thinking</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">crimethink</span> = dangerous thoughts</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">duckspeak</span> = speaking without thinking</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">prolefeed</span> = entertainment for masses</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">oldthink</span> = pre-revolutionary ideas</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">blackwhite</span> = accepting contradictions</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">bellyfeel</span> = blind acceptance</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">goodthink</span> = approved thinking</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">unperson</span> = erased from history</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">joycamp</span> = forced labor camp</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">facecrime</span> = wrong facial expression</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">Minipax</span> = Ministry of Peace</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">Miniluv</span> = Ministry of Love</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">plusgood</span> = good</div>
+        <div class="p-2 bg-gray-900 rounded"><span class="text-red-400">doubleplusungood</span> = very bad</div>
+      </div>
+    </div>
+
+    <!-- Footer: three phrases + copyright -->
+    <footer class="mt-8 text-center text-xs text-gray-600">
+      <p class="mb-1">WAR IS PEACE • FREEDOM IS SLAVERY • IGNORANCE IS STRENGTH</p>
+      <p>Copyright © 2026 By Hook or By Crook. All rights reserved.</p>
+    </footer>
+  </div>
+</div>
+
+<!-- =================== SCRIPTS: password logic + game logic =================== -->
+<script>
+/* ------------------ PASSWORD / CLASS-CODE LOGIC ------------------ */
+const CREATOR_PASSWORD = "BHBC1984clear!"; // TpT paid code (teacher)
+const creatorGate = document.getElementById('creator-gate');
+const teacherSetup = document.getElementById('teacher-setup');
+const studentGate = document.getElementById('student-gate');
+const app = document.getElementById('app');
+
+// If a class code already exists in localStorage, show student gate (skip creator gate)
+const storedClassCode = localStorage.getItem('classCode');
+if (storedClassCode) {
+  creatorGate.classList.add('hidden');
+  studentGate.classList.remove('hidden');
+}
+
+// Creator (teacher) enters TpT-paid code to access teacher setup
+document.getElementById('creator-submit').addEventListener('click', () => {
+  const input = document.getElementById('creator-password');
+  const err = document.getElementById('creator-error');
+  if (input.value === CREATOR_PASSWORD) {
+    // proceed to teacher setup
+    err.classList.add('hidden');
+    creatorGate.classList.add('hidden');
+    teacherSetup.classList.remove('hidden');
+  } else {
+    err.classList.remove('hidden');
+    input.classList.add('shake-input');
+    setTimeout(() => input.classList.remove('shake-input'), 400);
+    input.value = '';
+  }
+});
+
+// Cancel teacher setup -> return to creator gate
+document.getElementById('cancel-class-setup').addEventListener('click', () => {
+  teacherSetup.classList.add('hidden');
+  creatorGate.classList.remove('hidden');
+});
+
+// Teacher saves class code: stored in browser localStorage for this teacher's browser
+document.getElementById('save-class-code').addEventListener('click', () => {
+  const code = (document.getElementById('class-code-input').value || '').trim();
+  if (!code) return;
+  localStorage.setItem('classCode', code);
+  teacherSetup.classList.add('hidden');
+  // open the app immediately for teacher
+  initializeAndOpenApp();
+});
+
+// Student enters class code to unlock
+document.getElementById('student-submit').addEventListener('click', () => {
+  const input = document.getElementById('student-code');
+  const err = document.getElementById('student-error');
+  const code = (input.value || '').trim();
+  if (code && code === localStorage.getItem('classCode')) {
+    err.classList.add('hidden');
+    studentGate.classList.add('hidden');
+    initializeAndOpenApp();
+  } else {
+    err.classList.remove('hidden');
+    input.classList.add('shake-input');
+    setTimeout(() => input.classList.remove('shake-input'), 400);
+    input.value = '';
+  }
+});
+
+/* ------------------ GAME: data, UI, logic (from original, Canva removed) ------------------ */
+
+/* Default configuration (static, applied on app init) */
+const defaultConfig = {
+  activity_title: 'NEWSPEAK TRANSLATOR',
+  instruction_text: 'Learn to decode the language of Oceania. Progress through each level to master Newspeak translation.',
+  background_color: '#111827',
+  surface_color: '#1f2937',
+  text_color: '#f3f4f6',
+  primary_action: '#b91c1c',
+  secondary_action: '#991b1b',
+  font_family: 'IBM Plex Mono',
+  font_size: 16
+};
+
+/* Game data (unchanged) */
+const newspeakTerms = [
+  { newspeak: 'doubleplusgood', english: 'excellent' },
+  { newspeak: 'ungood', english: 'bad' },
+  { newspeak: 'thoughtcrime', english: 'independent thought' },
+  { newspeak: 'duckspeak', english: 'mindless speech' },
+  { newspeak: 'prolefeed', english: 'mass entertainment' },
+  { newspeak: 'oldthink', english: 'pre-revolutionary ideas' },
+  { newspeak: 'bellyfeel', english: 'blind acceptance' },
+  { newspeak: 'unperson', english: 'erased individual' },
+  { newspeak: 'goodthink', english: 'approved thinking' },
+  { newspeak: 'crimethink', english: 'dangerous thoughts' },
+  { newspeak: 'blackwhite', english: 'accepting contradictions' },
+  { newspeak: 'joycamp', english: 'forced labor camp' }
+];
+
+const translationPhrases = [
+  { 
+    newspeak: 'Big Brother is doubleplusgood.',
+    english: 'Big Brother is excellent.',
+    acceptedVariants: [
+      ['big brother', 'bb'],
+      ['excellent', 'very good', 'great', 'best', 'outstanding', 'superb']
+    ],
+    hints: ['doubleplusgood = excellent/best']
+  },
+  { 
+    newspeak: 'Thoughtcrime is ungood.',
+    english: 'Independent thinking is bad.',
+    acceptedVariants: [
+      ['thoughtcrime', 'independent thinking', 'independent thought', 'thinking independently', 'free thinking', 'free thought'],
+      ['bad', 'wrong', 'evil', 'negative', 'harmful']
+    ],
+    hints: ['thoughtcrime = independent thinking', 'ungood = bad']
+  },
+  { 
+    newspeak: 'The proles bellyfeel Ingsoc.',
+    english: 'The common people blindly accept the Party.',
+    acceptedVariants: [
+      ['proles', 'common people', 'masses', 'working class', 'workers', 'citizens', 'people'],
+      ['blindly accept', 'accept without question', 'accept blindly', 'embrace', 'believe in'],
+      ['party', 'ingsoc', 'government', 'english socialism']
+    ],
+    hints: ['proles = common people', 'bellyfeel = blindly accept', 'Ingsoc = the Party/English Socialism']
+  },
+  {
+    newspeak: 'Duckspeak is goodthink.',
+    english: 'Mindless speech is approved thinking.',
+    acceptedVariants: [
+      ['duckspeak', 'mindless speech', 'speaking mindlessly', 'thoughtless speaking', 'automatic speech', 'speaking without thinking'],
+      ['goodthink', 'approved thinking', 'orthodox thought', 'correct thinking', 'proper thinking', 'acceptable thinking']
+    ],
+    hints: ['duckspeak = mindless speech', 'goodthink = approved/correct thinking']
+  }
+];
+
+const decodePassages = [
+  {
+    newspeak: 'The Ministry of Truth reports that chocolate rations are doubleplusincreased from 30 grams to 20 grams. All citizens must bellyfeel this goodthink and reject oldthink about previous rations. This demonstrates how Oceania\'s production is plusgood.',
+    english: 'The Ministry of Truth reports that chocolate rations have been greatly increased from 30 grams to 20 grams (actually decreased). All citizens must blindly accept this approved message and reject pre-revolutionary thinking about previous rations. This demonstrates how Oceania\'s production is good.',
+    keywords: ['doubleplusincreased', 'bellyfeel', 'goodthink', 'oldthink', 'plusgood'],
+    hints: 'Notice the ration numbers - what do they actually show? How does this relate to doublethink?'
+  },
+  {
+    newspeak: 'Crimethink makes unpersons. Duckspeak Big Brother\'s doubleplusgood and practice blackwhite: War is Peace, the chocolate ration has always been 20 grams. Joycamp awaits thoughtcriminals who commit facecrime.',
+    english: 'Dangerous independent thoughts lead to being erased from history. Speak mindlessly about Big Brother\'s excellence and accept contradictions: War is Peace, the chocolate ration has always been 20 grams (even though it was just changed). Forced labor camps await those who think independently and show the wrong facial expression.',
+    keywords: ['crimethink', 'unpersons', 'duckspeak', 'blackwhite', 'doubleplusgood', 'joycamp', 'thoughtcriminals', 'facecrime'],
+    hints: 'Consider what "blackwhite" means - accepting two contradictory statements as both true.'
+  },
+  {
+    newspeak: 'Victory Mansions proles receive doubleplusungood prolefeed. Minipax announces pluscoldness, Victory Gin rations decreased to plusmuch. Miniluv ensures goodthink through unpersoning of crimethinkful citizens.',
+    english: 'Victory Mansions common people receive very bad mass entertainment. The Ministry of Peace announces increased cold weather, Victory Gin rations have decreased to more (actually less). The Ministry of Love ensures approved thinking through erasing citizens with dangerous thoughts from history.',
+    keywords: ['doubleplusungood', 'prolefeed', 'pluscoldness', 'plusmuch', 'Minipax', 'Miniluv', 'goodthink', 'unpersoning', 'crimethinkful'],
+    hints: 'The Ministries have shortened names. Notice how "plus" modifies meanings - sometimes opposite to what you\'d expect.'
+  }
+];
+
+/* Game state */
+let gameState = {
+  currentLevel: 1,
+  score: 0,
+  matchingCards: [],
+  selectedCards: [],
+  matchedPairs: 0,
+  translationProgress: 0,
+  decodeProgress: 0
+};
+
+/* Utility: shuffle */
+function shuffle(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+/* ----- Level 1 (matching) ----- */
+function initLevel1() {
+  const grid = document.getElementById('matching-grid');
+  grid.innerHTML = '';
+
+  const terms = newspeakTerms.slice(0, 6);
+  const cards = [];
+
+  terms.forEach((term, idx) => {
+    cards.push({ id: `n-${idx}`, type: 'newspeak', text: term.newspeak, pairId: idx });
+    cards.push({ id: `e-${idx}`, type: 'english', text: term.english, pairId: idx });
+  });
+
+  gameState.matchingCards = shuffle(cards);
+  gameState.selectedCards = [];
+  gameState.matchedPairs = 0;
+
+  gameState.matchingCards.forEach(card => {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'relative h-24 cursor-pointer';
+    cardEl.dataset.id = card.id;
+    cardEl.dataset.pairId = card.pairId;
+    cardEl.dataset.type = card.type;
+
+    cardEl.innerHTML = `
+      <div class="card-flip absolute inset-0">
+        <div class="card-front absolute inset-0 bg-gray-700 border-2 border-gray-600 rounded-lg flex items-center justify-center p-2 hover:border-red-700 transition-colors">
+          <span class="text-2xl">❓</span>
+        </div>
+        <div class="card-back absolute inset-0 ${card.type === 'newspeak' ? 'bg-red-900 border-red-700' : 'bg-gray-800 border-gray-600'} border-2 rounded-lg flex items-center justify-center p-2">
+          <span class="text-center text-sm ${card.type === 'newspeak' ? 'text-red-200 font-typewriter' : 'text-gray-200'}">${card.text}</span>
+        </div>
+      </div>
+    `;
+
+    cardEl.addEventListener('click', () => handleCardClick(cardEl, card));
+    grid.appendChild(cardEl);
+  });
+}
+
+function handleCardClick(cardEl, card) {
+  if (gameState.selectedCards.length >= 2) return;
+  if (cardEl.classList.contains('matched')) return;
+  if (gameState.selectedCards.find(c => c.id === card.id)) return;
+
+  const flipEl = cardEl.querySelector('.card-flip');
+  flipEl.classList.add('flipped');
+  gameState.selectedCards.push(card);
+
+  if (gameState.selectedCards.length === 2) {
+    checkMatch();
+  }
+}
+
+function checkMatch() {
+  const [card1, card2] = gameState.selectedCards;
+  const feedback = document.getElementById('match-feedback');
+
+  if (card1.pairId === card2.pairId && card1.type !== card2.type) {
+    feedback.textContent = 'DOUBLEPLUSGOOD! ✓';
+    feedback.className = 'text-center mt-6 h-8 text-lg font-typewriter text-green-400';
+
+    gameState.matchedPairs++;
+    gameState.score += 10;
+    updateScore();
+
+    setTimeout(() => {
+      document.querySelectorAll(`[data-pair-id="${card1.pairId}"]`).forEach(el => {
+        el.classList.add('matched');
+        const flip = el.querySelector('.card-flip');
+        if (flip) flip.style.opacity = '0.5';
+      });
+
+      gameState.selectedCards = [];
+
+      if (gameState.matchedPairs === 6) {
+        setTimeout(() => completeLevel(1), 500);
+      }
+    }, 500);
+  } else {
+    feedback.textContent = 'UNGOOD! Try again.';
+    feedback.className = 'text-center mt-6 h-8 text-lg font-typewriter text-red-400';
+
+    setTimeout(() => {
+      document.querySelectorAll('.card-flip.flipped:not(.matched *)').forEach(el => {
+        if (!el.closest('.matched')) {
+          el.classList.remove('flipped');
+        }
+      });
+
+      gameState.selectedCards.forEach(card => {
+        const cardEl = document.querySelector(`[data-id="${card.id}"]`);
+        if (cardEl && !cardEl.classList.contains('matched')) {
+          const flip = cardEl.querySelector('.card-flip');
+          if (flip) flip.classList.remove('flipped');
+        }
+      });
+
+      gameState.selectedCards = [];
+    }, 1000);
+  }
+}
+
+/* ----- Level 2 (translation exercises) ----- */
+function initLevel2() {
+  const container = document.getElementById('translation-container');
+  container.innerHTML = '';
+  gameState.translationProgress = 0;
+
+  translationPhrases.forEach((phrase, idx) => {
+    const exerciseEl = document.createElement('div');
+    exerciseEl.className = 'bg-gray-800 rounded-lg p-4 border border-gray-700';
+    exerciseEl.id = `translation-${idx}`;
+
+    exerciseEl.innerHTML = `
+      <div class="mb-3">
+        <span class="text-xs text-gray-500 uppercase">Newspeak:</span>
+        <p class="font-typewriter text-red-400 text-lg">"${phrase.newspeak}"</p>
+      </div>
+      <div class="mb-3">
+        <span class="text-xs text-gray-500 uppercase">Your Translation:</span>
+        <textarea 
+          class="w-full bg-gray-900 border border-gray-600 rounded p-2 mt-1 text-gray-200 focus:border-red-700 focus:outline-none resize-none"
+          rows="2"
+          placeholder="Type your translation here..."
+          data-idx="${idx}"
+        ></textarea>
+      </div>
+      <div class="flex justify-between items-center">
+        <button class="hint-btn hidden text-xs text-gray-500 hover:text-red-400 transition-colors" data-idx="${idx}">
+          💡 Show Hints
+        </button>
+        <button class="check-btn px-4 py-1 bg-red-900 hover:bg-red-800 text-red-200 rounded text-sm transition-colors" data-idx="${idx}">
+          Check
+        </button>
+      </div>
+      <div class="hints-container hidden mt-2 text-xs text-gray-500 space-y-1" data-idx="${idx}"></div>
+      <div class="feedback-container mt-2 hidden" data-idx="${idx}"></div>
+    `;
+
+    container.appendChild(exerciseEl);
+  });
+
+  // Add event listeners for hint and check buttons
+  document.querySelectorAll('.hint-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = e.target.dataset.idx;
+      const hintsContainer = document.querySelector(`.hints-container[data-idx="${idx}"]`);
+      hintsContainer.classList.toggle('hidden');
+      if (!hintsContainer.innerHTML) {
+        hintsContainer.innerHTML = translationPhrases[idx].hints.map(h => `<p>• ${h}</p>`).join('');
+      }
+      e.target.textContent = hintsContainer.classList.contains('hidden') ? '💡 Show Hints' : '💡 Hide Hints';
+    });
+  });
+
+  document.querySelectorAll('.check-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => checkTranslation(parseInt(e.target.dataset.idx)));
+  });
+}
+
+function checkTranslation(idx) {
+  const textarea = document.querySelector(`textarea[data-idx="${idx}"]`);
+  const feedback = document.querySelector(`.feedback-container[data-idx="${idx}"]`);
+  const phrase = translationPhrases[idx];
+  const expected = phrase.english.toLowerCase();
+  const userAnswer = textarea.value.trim().toLowerCase();
+
+  feedback.classList.remove('hidden');
+
+  let isCorrect = false;
+
+  if (phrase.acceptedVariants) {
+    let satisfiedGroups = 0;
+
+    phrase.acceptedVariants.forEach(variantGroup => {
+      const hasVariant = variantGroup.some(variant => {
+        return userAnswer.includes(variant.toLowerCase());
+      });
+      if (hasVariant) satisfiedGroups++;
+    });
+
+    isCorrect = satisfiedGroups >= phrase.acceptedVariants.length * 0.7;
+  } else {
+    const similarity = calculateSimilarity(userAnswer, expected);
+    isCorrect = similarity > 0.7;
+  }
+
+  if (isCorrect) {
+    feedback.innerHTML = `
+      <div class="text-green-400 text-sm">
+        ✓ DOUBLEPLUSGOOD! Your translation is correct.
+        <p class="text-gray-400 mt-1">Sample answer: "${phrase.english}"</p>
+      </div>
+    `;
+    textarea.disabled = true;
+    textarea.classList.add('opacity-50');
+    gameState.score += 25;
+    gameState.translationProgress++;
+    updateScore();
+
+    if (gameState.translationProgress === translationPhrases.length) {
+      setTimeout(() => completeLevel(2), 1000);
+    }
+  } else {
+    feedback.innerHTML = `
+      <div class="text-yellow-400 text-sm">
+        ⚠ Close, but not quite. Check the hints and try again.
+      </div>
+    `;
+    textarea.parentElement.classList.add('shake');
+    setTimeout(() => textarea.parentElement.classList.remove('shake'), 500);
+
+    const hintBtn = document.querySelector(`.hint-btn[data-idx="${idx}"]`);
+    hintBtn.classList.remove('hidden');
+  }
+}
+
+/* ----- similarity helper ----- */
+function calculateSimilarity(str1, str2) {
+  const words1 = str1.split(/\s+/).filter(w => w.length > 2);
+  const words2 = str2.split(/\s+/).filter(w => w.length > 2);
+  if (words1.length === 0 || words2.length === 0) return 0;
+  let matches = 0;
+
+  words1.forEach(w1 => {
+    if (words2.some(w2 => w2.includes(w1) || w1.includes(w2))) matches++;
+  });
+
+  return matches / Math.max(words1.length, words2.length);
+}
+
+/* ----- Level 3 (decode) ----- */
+function initLevel3() {
+  const container = document.getElementById('decode-container');
+  container.innerHTML = '';
+  gameState.decodeProgress = 0;
+
+  decodePassages.forEach((passage, idx) => {
+    const exerciseEl = document.createElement('div');
+    exerciseEl.className = 'bg-gray-800 rounded-lg p-6 border border-gray-700';
+    exerciseEl.id = `decode-${idx}`;
+
+    exerciseEl.innerHTML = `
+      <div class="mb-4">
+        <span class="text-xs text-red-400 uppercase tracking-wider">Ministry Broadcast #${idx + 1}</span>
+        <div class="mt-2 p-4 bg-gray-900 rounded border-l-4 border-red-700">
+          <p class="font-typewriter text-red-300 leading-relaxed">${passage.newspeak}</p>
+        </div>
+      </div>
+      <div class="mb-4">
+        <span class="text-xs text-gray-500 uppercase">Key Terms to Decode:</span>
+        <div class="flex flex-wrap gap-2 mt-2">
+          ${passage.keywords.map(k => `<span class="px-2 py-1 bg-gray-700 rounded text-xs text-red-400">${k}</span>`).join('')}
+        </div>
+      </div>
+      ${passage.hints ? `
+      <div class="mb-4 p-3 bg-yellow-900 bg-opacity-20 border border-yellow-700 rounded">
+        <span class="text-xs text-yellow-400 uppercase">💡 Analysis Hint:</span>
+        <p class="text-sm text-yellow-200 mt-1">${passage.hints}</p>
+      </div>
+      ` : ''}
+      <div class="mb-4">
+        <label class="text-xs text-gray-500 uppercase">Your Full Translation:</label>
+        <textarea 
+          class="w-full bg-gray-900 border border-gray-600 rounded p-3 mt-2 text-gray-200 focus:border-red-700 focus:outline-none resize-none"
+          rows="4"
+          placeholder="Translate the entire passage into Standard English..."
+          data-idx="${idx}"
+        ></textarea>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button class="reveal-btn text-sm text-gray-500 hover:text-red-400 transition-colors" data-idx="${idx}">Reveal Answer</button>
+        <button class="submit-btn px-6 py-2 bg-red-900 hover:bg-red-800 text-red-200 rounded transition-colors font-typewriter" data-idx="${idx}">SUBMIT</button>
+      </div>
+      <div class="result-container mt-4 hidden" data-idx="${idx}"></div>
+    `;
+
+    container.appendChild(exerciseEl);
+  });
+
+  // listeners
+  document.querySelectorAll('.reveal-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.idx);
+      const result = document.querySelector(`.result-container[data-idx="${idx}"]`);
+      result.classList.remove('hidden');
+      result.innerHTML = `
+        <div class="p-4 bg-gray-900 rounded border border-gray-600">
+          <span class="text-xs text-gray-500 uppercase">Standard English Translation:</span>
+          <p class="mt-2 text-gray-300 leading-relaxed">${decodePassages[idx].english}</p>
+        </div>
+      `;
+    });
+  });
+
+  document.querySelectorAll('.submit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => submitDecode(parseInt(e.target.dataset.idx)));
+  });
+}
+
+function submitDecode(idx) {
+  const textarea = document.querySelector(`#decode-${idx} textarea`);
+  const result = document.querySelector(`.result-container[data-idx="${idx}"]`);
+  const expected = decodePassages[idx].english.toLowerCase();
+  const userAnswer = (textarea.value || '').trim().toLowerCase();
+
+  if (!userAnswer) {
+    result.classList.remove('hidden');
+    result.innerHTML = '<p class="text-red-400 text-sm">Please enter your translation.</p>';
+    return;
+  }
+
+  const similarity = calculateSimilarity(userAnswer, expected);
+  result.classList.remove('hidden');
+
+  if (similarity > 0.5) {
+    result.innerHTML = `
+      <div class="p-4 bg-green-900 bg-opacity-30 rounded border border-green-700">
+        <p class="text-green-400 font-typewriter">✓ DOUBLEPLUSGOOD TRANSLATION!</p>
+        <p class="text-gray-400 mt-2 text-sm">Your translation captures the key meanings.</p>
+        <div class="mt-3 p-3 bg-gray-900 rounded">
+          <span class="text-xs text-gray-500">Model Answer:</span>
+          <p class="mt-1 text-gray-300 text-sm">${decodePassages[idx].english}</p>
+        </div>
+      </div>
+    `;
+    textarea.disabled = true;
+    gameState.score += 50;
+    gameState.decodeProgress++;
+    updateScore();
+
+    if (gameState.decodeProgress === decodePassages.length) {
+      setTimeout(completeGame, 1500);
+    }
+  } else {
+    result.innerHTML = `
+      <div class="p-4 bg-yellow-900 bg-opacity-30 rounded border border-yellow-700">
+        <p class="text-yellow-400">⚠ Your translation needs more work.</p>
+        <p class="text-gray-400 mt-2 text-sm">Try to translate more of the key Newspeak terms. Use the dictionary for help.</p>
+      </div>
+    `;
+  }
+}
+
+/* ----- Level switching, progress, score, restart ----- */
+function completeLevel(level) {
+  const nextLevel = level + 1;
+  const nextBtn = document.getElementById(`level-${nextLevel}-btn`);
+  if (nextBtn) {
+    nextBtn.disabled = false;
+    nextBtn.classList.remove('bg-gray-800','text-gray-500','border-gray-700','cursor-not-allowed');
+    nextBtn.classList.add('bg-red-900','text-red-200','border-red-700','hover:bg-red-800');
+  }
+
+  if (nextLevel <= 3) {
+    switchLevel(nextLevel);
+  }
+  updateProgress();
+}
+
+function switchLevel(level) {
+  gameState.currentLevel = level;
+
+  document.querySelectorAll('.level-btn').forEach((btn, idx) => {
+    if (idx + 1 === level) {
+      btn.classList.add('ring-2','ring-red-500');
+    } else {
+      btn.classList.remove('ring-2','ring-red-500');
+    }
+  });
+
+  document.querySelectorAll('.level-content').forEach(el => el.classList.add('hidden'));
+  const levelEl = document.getElementById(`level-${level}`);
+  if (levelEl) levelEl.classList.remove('hidden');
+
+  if (level === 1) initLevel1();
+  else if (level === 2) initLevel2();
+  else if (level === 3) initLevel3();
+
+  document.getElementById('current-level').textContent = level;
+  updateProgress();
+}
+
+function completeGame() {
+  document.getElementById('game-container').classList.add('hidden');
+  document.getElementById('completion-screen').classList.remove('hidden');
+  document.getElementById('final-score').textContent = gameState.score;
+}
+
+function updateScore() {
+  document.getElementById('score-display').textContent = `Score: ${gameState.score}`;
+}
+
+function updateProgress() {
+  const totalSteps = 3;
+  const completedSteps = gameState.currentLevel - 1 +
+    (gameState.currentLevel === 1 ? gameState.matchedPairs / 6 : 0) +
+    (gameState.currentLevel === 2 ? gameState.translationProgress / translationPhrases.length : 0) +
+    (gameState.currentLevel === 3 ? gameState.decodeProgress / decodePassages.length : 0);
+
+  const progress = (completedSteps / totalSteps) * 100;
+  const bar = document.getElementById('progress-bar');
+  if (bar) bar.style.width = `${Math.min(progress, 100)}%`;
+}
+
+function restart() {
+  gameState = {
+    currentLevel: 1,
+    score: 0,
+    matchingCards: [],
+    selectedCards: [],
+    matchedPairs: 0,
+    translationProgress: 0,
+    decodeProgress: 0
+  };
+
+  document.querySelectorAll('.level-btn').forEach((btn, idx) => {
+    if (idx === 0) {
+      btn.disabled = false;
+      btn.classList.remove('bg-gray-800','text-gray-500','border-gray-700','cursor-not-allowed');
+      btn.classList.add('bg-red-900','text-red-200','border-red-700','hover:bg-red-800');
+    } else {
+      btn.disabled = true;
+      btn.classList.add('bg-gray-800','text-gray-500','border-gray-700','cursor-not-allowed');
+      btn.classList.remove('bg-red-900','text-red-200','border-red-700','hover:bg-red-800');
+    }
+  });
+
+  document.getElementById('completion-screen').classList.add('hidden');
+  document.getElementById('game-container').classList.remove('hidden');
+
+  updateScore();
+  switchLevel(1);
+}
+
+/* ----- Reference toggle and event wiring set up at init ----- */
+function setupEventListeners() {
+  document.getElementById('toggle-reference').addEventListener('click', () => {
+    const content = document.getElementById('reference-content');
+    const arrow = document.getElementById('reference-arrow');
+    content.classList.toggle('hidden');
+    arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+  });
+
+  document.getElementById('restart-btn').addEventListener('click', restart);
+
+  document.querySelectorAll('.level-btn').forEach((btn, idx) => {
+    btn.addEventListener('click', () => {
+      if (!btn.disabled) switchLevel(idx + 1);
+    });
+  });
+}
+
+/* ----- Apply default config (static) ----- */
+function applyDefaultConfig(config) {
+  try {
+    const title = document.getElementById('main-title');
+    const instruction = document.getElementById('main-instruction');
+    if (title) title.textContent = config.activity_title || title.textContent;
+    if (instruction) instruction.textContent = config.instruction_text || instruction.textContent;
+    document.body.style.backgroundColor = config.background_color || defaultConfig.background_color;
+    document.body.style.color = config.text_color || defaultConfig.text_color;
+
+    // update some UI surfaces (select by class names used)
+    document.querySelectorAll('.bg-gray-800').forEach(el => el.style.backgroundColor = config.surface_color || defaultConfig.surface_color);
+    document.querySelectorAll('.bg-red-900').forEach(el => el.style.backgroundColor = config.primary_action || defaultConfig.primary_action);
+    // fonts and sizes (best-effort)
+    document.body.style.fontFamily = `${config.font_family || defaultConfig.font_family}, monospace`;
+    document.body.style.fontSize = `${config.font_size || defaultConfig.font_size}px`;
+  } catch (e) {
+    // fail silently
+    console.warn('applyDefaultConfig error', e);
+  }
+}
+
+/* ----- Initialize everything and open app ----- */
+let appInitialized = false;
+function initializeAndOpenApp() {
+  // Apply static config
+  applyDefaultConfig(defaultConfig);
+
+  // Show app
+  app.classList.remove('hidden');
+
+  // If not initialized yet, wire up listeners and start level 1
+  if (!appInitialized) {
+    setupEventListeners();
+    initLevel1();
+    updateScore();
+    updateProgress();
+    appInitialized = true;
+  } else {
+    // reinitialize level 1 state if reopening
+    initLevel1();
+    updateScore();
+    updateProgress();
+  }
+}
+</script>
+</body>
+</html>
