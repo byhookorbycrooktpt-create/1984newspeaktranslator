@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newspeak Game</title>
+<style>
+  body { font-family: 'Proxima Nova', sans-serif; background-color: #fdf6e3; color: #333; text-align: center; margin: 0; padding: 0; }
+  #accessScreen, #gameScreen { display: none; padding: 20px; }
+  button { background-color: #f4a261; border: none; padding: 10px 20px; margin: 10px; cursor: pointer; font-size: 16px; }
+  #dictionary { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; margin-top: 20px; text-align: left; display: inline-block; }
+  #dictionary.show { max-height: 500px; }
+  .level { display: none; }
+  #points { font-weight: bold; margin: 10px 0; }
+  footer { margin-top: 30px; font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+
+<div id="accessScreen">
+  <h1>Enter Access Code</h1>
+  <input type="password" id="accessInput" placeholder="Access Code">
+  <button onclick="checkAccessCode()">Enter</button>
+  <p id="accessMessage" style="color:red;"></p>
+</div>
+
+<div id="gameScreen">
+  <h1>Newspeak Game</h1>
+  <div id="points">Points: 0</div>
+  
+  <div id="level1" class="level">
+    <h2>Level 1: Flip Two and Match</h2>
+    <p>Type the translation for the words that match. Hint appears after 1 failed attempt.</p>
+    <div id="level1Words"></div>
+    <input type="text" id="level1Input" placeholder="Type translation">
+    <button onclick="checkLevel1()">Submit</button>
+    <p id="level1Hint" style="color: red;"></p>
+  </div>
+  
+  <div id="level2" class="level">
+    <h2>Level 2</h2>
+    <p>Level 2 game goes here. Auto-unlocks after Level 1.</p>
+    <button onclick="completeLevel(2)">Complete Level 2</button>
+  </div>
+  
+  <div id="level3" class="level">
+    <h2>Level 3</h2>
+    <p>Level 3 game goes here. Auto-unlocks after Level 2.</p>
+    <button onclick="completeLevel(3)">Complete Level 3</button>
+  </div>
+  
+  <button onclick="toggleDictionary()">Newspeak Dictionary ▼</button>
+  <div id="dictionary">
+    <p>doubleplusgood = excellent, best</p>
+    <p>ungood = bad</p>
+    <p>thoughtcrime = independent thinking</p>
+    <p>crimethink = dangerous thoughts</p>
+    <p>duckspeak = speaking without thinking</p>
+    <p>prolefeed = entertainment for masses</p>
+    <p>oldthink = pre-revolutionary ideas</p>
+    <p>blackwhite = accepting contradictions</p>
+    <p>bellyfeel = blind acceptance</p>
+    <p>goodthink = approved thinking</p>
+    <p>unperson = erased from history</p>
+    <p>joycamp = forced labor camp</p>
+    <p>facecrime = wrong facial expression</p>
+    <p>Minipax = Ministry of Peace</p>
+    <p>Miniluv = Ministry of Love</p>
+    <p>plusgood = good</p>
+    <p>doubleplusungood = very bad</p>
+  </div>
+  
+  <footer>Copyright 2026, By Hook or By Crook. All rights reserved.</footer>
+</div>
+
+<script>
+let points = 0;
+let level1Attempts = 0;
+const accessCode = "BHBC1984clear!";
+
+function showScreen(screen) {
+  document.getElementById("accessScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById(screen).style.display = "block";
+}
+
+function checkAccessCode() {
+  const input = document.getElementById("accessInput").value;
+  if(input === accessCode){
+    document.getElementById("accessScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+    showLevel(1);
+  } else {
+    document.getElementById("accessMessage").textContent = "Incorrect code!";
+  }
+}
+
+function showLevel(n){
+  [1,2,3].forEach(l => document.getElementById("level"+l).style.display = "none");
+  document.getElementById("level"+n).style.display = "block";
+}
+
+function checkLevel1(){
+  const answer = document.getElementById("level1Input").value.toLowerCase();
+  const correct = ["excellent","best"]; // Example correct answers
+  level1Attempts++;
+  if(correct.includes(answer)){
+    points += 10;
+    document.getElementById("points").textContent = "Points: "+points;
+    showLevel(2);
+  } else {
+    if(level1Attempts >=1){
+      document.getElementById("level1Hint").textContent = "Hint: doubleplusgood = excellent, best";
+    }
+  }
+}
+
+function completeLevel(n){
+  points += 10;
+  document.getElementById("points").textContent = "Points: "+points;
+  if(n<3){
+    showLevel(n+1);
+  } else {
+    alert("Congratulations! You finished all levels.");
+  }
+}
+
+function toggleDictionary(){
+  document.getElementById("dictionary").classList.toggle("show");
+}
+
+// Show access screen initially
+document.getElementById("accessScreen").style.display = "block";
+</script>
+
+</body>
+</html>
